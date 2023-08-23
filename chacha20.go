@@ -3,12 +3,16 @@ package chacha20
 import (
 	"crypto/sha256"
 	"errors"
+
+	"github.com/wedkarz02/chacha20/util"
 )
 
 const (
-	BLOCK_SIZE = 64
-	WORD_SIZE  = 4
-	KEY_SIZE   = 32
+	BLOCK_SIZE   = 64
+	WORD_SIZE    = 4
+	KEY_SIZE     = 32
+	NONCE_SIZE   = util.NONCE_SIZE
+	COUNTER_SIZE = util.COUNTER_SIZE
 )
 
 // "expand 32-byte k"
