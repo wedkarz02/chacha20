@@ -17,15 +17,21 @@ func TestNonce(t *testing.T) {
 	fmt.Println(len(n.Bytes))
 }
 
-func TestCounter(t *testing.T) {
-	ctr := util.NewCounter()
+func TestNewCipher(t *testing.T) {
+	c, err := NewCipher([]byte("asdf"))
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Println(len(ctr.Bytes))
-	for i := 0; i < 256; i++ {
-		ctr.Increment()
-		for _, b := range ctr.Bytes {
-			fmt.Printf("%02x ", b)
+	for i := 0; i < 0xffe; i++ {
+		c.state[12]++
+	}
+
+	for i, word := range c.state {
+		if i%4 == 0 {
+			fmt.Println()
 		}
-		fmt.Println()
+
+		fmt.Printf("%08x ", word)
 	}
 }

@@ -2,17 +2,17 @@ package chacha20
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"errors"
 
 	"github.com/wedkarz02/chacha20/util"
 )
 
 const (
-	BLOCK_SIZE   = 64
-	WORD_SIZE    = 4
-	KEY_SIZE     = 32
-	NONCE_SIZE   = util.NONCE_SIZE
-	COUNTER_SIZE = util.COUNTER_SIZE
+	STATE_SIZE = 16 // uint32
+	// WORD_SIZE    = 4
+	KEY_SIZE   = 32              // byte
+	NONCE_SIZE = util.NONCE_SIZE // byte
 )
 
 // "expand 32-byte k"
@@ -28,7 +28,9 @@ var (
 )
 
 type Cipher struct {
-	Key []byte
+	Key   []byte
+	state [STATE_SIZE]uint32
+	nonce *util.Nonce
 }
 
 func NewCipher(k []byte) (*Cipher, error) {
@@ -38,7 +40,17 @@ func NewCipher(k []byte) (*Cipher, error) {
 		return nil, ErrKeySize
 	}
 
-	c := Cipher{Key: hashedKey}
+	n, err := util.NewNonce()
+	if err != nil {
+		return nil, err
+	}
+
+	c := Cipher{
+		Key:   hashedKey,
+		nonce: n,
+	}
+
+	c.initState(true)
 
 	return &c, nil
 }
@@ -53,4 +65,27 @@ func newSHA256(k []byte) []byte {
 	hash := sha256.New()
 	hash.Write(k)
 	return hash.Sum(nil)
+}
+
+func (c *Cipher) initState(ctrReset bool) {
+	// Constants
+	c.state[0] = CONSTANT_0
+	c.state[1] = CONSTANT_1
+	c.state[2] = CONSTANT_2
+	c.state[3] = CONSTANT_3
+
+	// Key
+	for i := 0; i < 8; i++ {
+		c.state[i+4] = binary.LittleEndian.Uint32(c.Key[i*4 : (i+1)*4])
+	}
+
+	// Counter
+	if ctrReset {
+		c.state[12] = uint32(0)
+	}
+
+	// Nonce
+	c.state[13] = binary.LittleEndian.Uint32(c.nonce.Bytes[0*4 : 1*4])
+	c.state[14] = binary.LittleEndian.Uint32(c.nonce.Bytes[1*4 : 2*4])
+	c.state[15] = binary.LittleEndian.Uint32(c.nonce.Bytes[2*4 : 3*4])
 }
