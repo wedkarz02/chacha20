@@ -50,7 +50,7 @@ func NewCipher(k []byte) (*Cipher, error) {
 		nonce: n,
 	}
 
-	c.initState(true)
+	c.initState(uint32(0))
 
 	return &c, nil
 }
@@ -67,7 +67,7 @@ func newSHA256(k []byte) []byte {
 	return hash.Sum(nil)
 }
 
-func (c *Cipher) initState(ctrReset bool) {
+func (c *Cipher) initState(ctr uint32) {
 	// Constants
 	c.state[0] = CONSTANT_0
 	c.state[1] = CONSTANT_1
@@ -80,9 +80,7 @@ func (c *Cipher) initState(ctrReset bool) {
 	}
 
 	// Counter
-	if ctrReset {
-		c.state[12] = uint32(0)
-	}
+	c.state[12] = ctr
 
 	// Nonce
 	c.state[13] = binary.LittleEndian.Uint32(c.nonce.Bytes[0*4 : 1*4])
