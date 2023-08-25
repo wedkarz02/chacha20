@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	STATE_SIZE = 16 // uint32
-	// WORD_SIZE    = 4
-	KEY_SIZE   = 32              // byte
-	NONCE_SIZE = util.NONCE_SIZE // byte
+	STATE_SIZE = 16
+	KEY_SIZE   = 32
+	NONCE_SIZE = util.NONCE_SIZE
+	NR         = 20
 )
 
 // "expand 32-byte k"
@@ -91,6 +91,11 @@ func (c *Cipher) resetState() {
 	c.state[15] = binary.LittleEndian.Uint32(c.nonce.Bytes[2*4 : 3*4])
 }
 
+func (c *Cipher) CtrIncrement() {
+	c.ctr++
+	c.state[12] = c.ctr
+}
+
 func (c *Cipher) quarterRound(x, y, z, w int) {
 	c.state[x] += c.state[y]
 	c.state[w] ^= c.state[x]
@@ -104,4 +109,28 @@ func (c *Cipher) quarterRound(x, y, z, w int) {
 	c.state[z] += c.state[w]
 	c.state[y] ^= c.state[z]
 	c.state[y] = bits.RotateLeft32(c.state[y], 7)
+}
+
+func (c *Cipher) block() {
+	var initialState [STATE_SIZE]uint32
+	copy(initialState[:], c.state[:])
+
+	// 20 rounds of alternating column rounds and diagonal rounds
+	for i := 0; i < NR/2; i++ {
+		// Column round
+		c.quarterRound(0, 4, 8, 12)
+		c.quarterRound(1, 5, 9, 13)
+		c.quarterRound(2, 6, 10, 14)
+		c.quarterRound(3, 7, 11, 15)
+
+		// Diagonal round
+		c.quarterRound(0, 5, 10, 15)
+		c.quarterRound(1, 6, 11, 12)
+		c.quarterRound(2, 7, 8, 13)
+		c.quarterRound(3, 4, 9, 14)
+	}
+
+	for i, word := range initialState {
+		c.state[i] += word
+	}
 }
