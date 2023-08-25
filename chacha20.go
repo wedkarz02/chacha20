@@ -30,6 +30,7 @@ var (
 type Cipher struct {
 	Key   []byte
 	state [STATE_SIZE]uint32
+	ctr   uint32
 	nonce *util.Nonce
 }
 
@@ -47,10 +48,11 @@ func NewCipher(k []byte) (*Cipher, error) {
 
 	c := Cipher{
 		Key:   hashedKey,
+		ctr:   uint32(0),
 		nonce: n,
 	}
 
-	c.initState(uint32(0))
+	c.resetState()
 
 	return &c, nil
 }
@@ -67,7 +69,7 @@ func newSHA256(k []byte) []byte {
 	return hash.Sum(nil)
 }
 
-func (c *Cipher) initState(ctr uint32) {
+func (c *Cipher) resetState() {
 	// Constants
 	c.state[0] = CONSTANT_0
 	c.state[1] = CONSTANT_1
@@ -80,7 +82,7 @@ func (c *Cipher) initState(ctr uint32) {
 	}
 
 	// Counter
-	c.state[12] = ctr
+	c.state[12] = c.ctr
 
 	// Nonce
 	c.state[13] = binary.LittleEndian.Uint32(c.nonce.Bytes[0*4 : 1*4])

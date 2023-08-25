@@ -23,10 +23,6 @@ func TestNewCipher(t *testing.T) {
 		panic(err)
 	}
 
-	for i := 0; i < 0xffe; i++ {
-		c.state[12]++
-	}
-
 	for i, word := range c.state {
 		if i%4 == 0 {
 			fmt.Println()
