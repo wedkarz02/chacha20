@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"math/bits"
 
 	"github.com/wedkarz02/chacha20/util"
 )
@@ -88,4 +89,19 @@ func (c *Cipher) resetState() {
 	c.state[13] = binary.LittleEndian.Uint32(c.nonce.Bytes[0*4 : 1*4])
 	c.state[14] = binary.LittleEndian.Uint32(c.nonce.Bytes[1*4 : 2*4])
 	c.state[15] = binary.LittleEndian.Uint32(c.nonce.Bytes[2*4 : 3*4])
+}
+
+func (c *Cipher) quarterRound(x, y, z, w int) {
+	c.state[x] += c.state[y]
+	c.state[w] ^= c.state[x]
+	c.state[w] = bits.RotateLeft32(c.state[w], 16)
+	c.state[z] += c.state[w]
+	c.state[y] ^= c.state[z]
+	c.state[y] = bits.RotateLeft32(c.state[y], 12)
+	c.state[x] += c.state[y]
+	c.state[w] ^= c.state[x]
+	c.state[w] = bits.RotateLeft32(c.state[w], 8)
+	c.state[z] += c.state[w]
+	c.state[y] ^= c.state[z]
+	c.state[y] = bits.RotateLeft32(c.state[y], 7)
 }
