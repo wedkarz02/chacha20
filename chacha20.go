@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+// Package chacha20 implements the ChaCha20 encryption algorithm.
 package chacha20
 
 import (
@@ -30,24 +31,40 @@ import (
 )
 
 const (
+	// Size of the ChaCha20 state in uint32 words.
 	STATE_SIZE = 16
-	KEY_SIZE   = 32
+
+	// Size of the key in bytes.
+	KEY_SIZE = 32
+
+	// Size of the nonce in the 96-bit variant.
 	NONCE_SIZE = util.NONCE_SIZE
-	NR         = 20
+
+	// Number of ChaCha rounds
+	NR = 20
 )
 
-// "expand 32-byte k"
 const (
+	// ChaCha constant: "expa"
 	CONSTANT_0 = uint32(0x61707865)
+
+	// ChaCha constant: "nd 3"
 	CONSTANT_1 = uint32(0x3320646e)
+
+	// ChaCha constant: "2-by"
 	CONSTANT_2 = uint32(0x79622d32)
+
+	// ChaCha constant: "te k"
 	CONSTANT_3 = uint32(0x6b206574)
 )
 
 var (
+	// Error returned if the key is not 32 bytes.
 	ErrKeySize = errors.New("invalid key size")
 )
 
+// Cipher structure contains information about the key,
+// the state, current counter number and the nonce.
 type Cipher struct {
 	Key   []byte
 	state [STATE_SIZE]uint32
