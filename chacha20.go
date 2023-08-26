@@ -1,15 +1,15 @@
 // Copyright (c) 2023 Paweł Rybak
-
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,6 +19,10 @@
 // SOFTWARE.
 
 // Package chacha20 implements the ChaCha20 encryption algorithm.
+//
+// It was coded referencing RFC	8439:
+//
+// https://datatracker.ietf.org/doc/html/rfc8439
 package chacha20
 
 import (
@@ -40,21 +44,21 @@ const (
 	// Size of the nonce in the 96-bit variant.
 	NONCE_SIZE = util.NONCE_SIZE
 
-	// Number of ChaCha rounds
+	// Number of ChaCha rounds.
 	NR = 20
 )
 
 const (
-	// ChaCha constant: "expa"
+	// ChaCha constant: "expa" in little endian.
 	CONSTANT_0 = uint32(0x61707865)
 
-	// ChaCha constant: "nd 3"
+	// ChaCha constant: "nd 3" in little endian.
 	CONSTANT_1 = uint32(0x3320646e)
 
-	// ChaCha constant: "2-by"
+	// ChaCha constant: "2-by" in little endian.
 	CONSTANT_2 = uint32(0x79622d32)
 
-	// ChaCha constant: "te k"
+	// ChaCha constant: "te k" in little endian.
 	CONSTANT_3 = uint32(0x6b206574)
 )
 
@@ -72,6 +76,9 @@ type Cipher struct {
 	nonce *util.Nonce
 }
 
+// NewCipher initializes new ChaCha20 cipher
+// with the key hashed to the right size
+// using SHA256 and generates a unique nonce.
 func NewCipher(k []byte) (*Cipher, error) {
 	hashedKey := newSHA256(k)
 
@@ -95,18 +102,36 @@ func NewCipher(k []byte) (*Cipher, error) {
 	return &c, nil
 }
 
+// ClearKey sets all bytes of the key to 0x00 to make
+// sure that they can't be retrieved from memory.
 func (c *Cipher) ClearKey() {
 	for i := range c.Key {
 		c.Key[i] = 0x00
 	}
 }
 
+// NewSHA256 returns a hashed byte slice of the input.
+// Used to make sure that the key is exactly 32 bytes.
+//
+// https://en.wikipedia.org/wiki/SHA-2
 func newSHA256(k []byte) []byte {
 	hash := sha256.New()
 	hash.Write(k)
 	return hash.Sum(nil)
 }
 
+// ResetState initializes the ChaCha state by
+// setting the 32-bit words in this matrix:
+//
+// C C C C
+// K K K K
+// K K K K
+// B N N N
+//
+// C - constant
+// K - key
+// B - block count
+// N - nonce
 func (c *Cipher) resetState() {
 	// Constants
 	c.state[0] = CONSTANT_0
@@ -128,11 +153,17 @@ func (c *Cipher) resetState() {
 	c.state[15] = binary.LittleEndian.Uint32(c.nonce.Bytes[2*4 : 3*4])
 }
 
-func (c *Cipher) CtrIncrement() {
+// CtrIncrement increments the cipher counter
+// and updates the state.
+func (c *Cipher) ctrIncrement() {
 	c.ctr++
 	c.state[12] = c.ctr
 }
 
+// QuarterRound performs the core operation
+// of the ChaCha cipher.
+//
+// https://datatracker.ietf.org/doc/html/rfc8439#section-2.1
 func (c *Cipher) quarterRound(x, y, z, w int) {
 	c.state[x] += c.state[y]
 	c.state[w] ^= c.state[x]
@@ -148,6 +179,10 @@ func (c *Cipher) quarterRound(x, y, z, w int) {
 	c.state[y] = bits.RotateLeft32(c.state[y], 7)
 }
 
+// Block performs 20 quarter rounds to create
+// one block of ChaCha20 key stream.
+//
+// https://datatracker.ietf.org/doc/html/rfc8439#section-2.3
 func (c *Cipher) block() {
 	var initialState [STATE_SIZE]uint32
 	copy(initialState[:], c.state[:])
