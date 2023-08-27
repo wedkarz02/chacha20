@@ -38,11 +38,17 @@ const (
 	// Size of the ChaCha20 state in uint32 words.
 	STATE_SIZE = 16
 
+	// Size of the ChaCha20 state in bytes.
+	STATE_BYTE_SIZE = 64
+
 	// Size of the key in bytes.
 	KEY_SIZE = 32
 
 	// Size of the nonce in the 96-bit variant.
 	NONCE_SIZE = util.NONCE_SIZE
+
+	// Initial value of the 32-bit counter.
+	INITIAL_CTR = uint32(1)
 
 	// Number of ChaCha rounds.
 	NR = 20
@@ -65,6 +71,10 @@ const (
 var (
 	// Error returned if the key is not 32 bytes.
 	ErrKeySize = errors.New("invalid key size")
+
+	// Error returned if there isn't enough keystream
+	// to XOR with the data.
+	ErrKeyStreamSize = errors.New("key stream shorter than data")
 )
 
 // Cipher structure contains information about the key,
@@ -93,7 +103,7 @@ func NewCipher(k []byte) (*Cipher, error) {
 
 	c := Cipher{
 		Key:   hashedKey,
-		ctr:   uint32(0),
+		ctr:   INITIAL_CTR,
 		nonce: n,
 	}
 
@@ -153,13 +163,6 @@ func (c *Cipher) resetState() {
 	c.state[15] = binary.LittleEndian.Uint32(c.nonce.Bytes[2*4 : 3*4])
 }
 
-// CtrIncrement increments the cipher counter
-// and updates the state.
-func (c *Cipher) ctrIncrement() {
-	c.ctr++
-	c.state[12] = c.ctr
-}
-
 // QuarterRound performs the core operation
 // of the ChaCha cipher.
 //
@@ -206,4 +209,62 @@ func (c *Cipher) block() {
 	for i, word := range initialState {
 		c.state[i] += word
 	}
+}
+
+// Serialize converts the current state
+// from []uint32 to []byte in little endian.
+func (c *Cipher) serialize() [STATE_BYTE_SIZE]byte {
+	var serializedState [STATE_BYTE_SIZE]byte
+
+	for i := 0; i < STATE_SIZE; i++ {
+		binary.LittleEndian.PutUint32(serializedState[i*4:(i+1)*4], c.state[i])
+	}
+
+	return serializedState
+}
+
+// StreamBytes performs an XOR on data and keyStream bytes.
+// Excessive bytes from the keyStream are discarded.
+//
+// ErrKeyStreamSize error is returned when there isn't
+// enough keyStream to cover the entire data.
+func streamBytes(data []byte, keyStream []byte) ([]byte, error) {
+	if len(data) > len(keyStream) {
+		return nil, ErrKeyStreamSize
+	}
+
+	var result []byte
+	for i, b := range data {
+		result = append(result, b^keyStream[i])
+	}
+
+	return result, nil
+}
+
+// Data encryption using ChaCha20 algorithm with a 96-bit nonce variant.
+//
+// https://datatracker.ietf.org/doc/html/rfc8439
+func (c *Cipher) Encrypt(plainText []byte) ([]byte, error) {
+	var keyStream []byte
+
+	if c.ctr != INITIAL_CTR {
+		c.ctr = INITIAL_CTR
+		c.resetState()
+	}
+
+	for i := 0; i < len(plainText)/STATE_BYTE_SIZE+1; i++ {
+		c.block()
+		streamBytes := c.serialize()
+		keyStream = append(keyStream, streamBytes[:]...)
+		c.ctr++
+		c.resetState()
+	}
+
+	cipherText, err := streamBytes(plainText, keyStream)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return cipherText, nil
 }
