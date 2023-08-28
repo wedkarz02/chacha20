@@ -268,3 +268,12 @@ func (c *Cipher) Encrypt(plainText []byte) ([]byte, error) {
 
 	return cipherText, nil
 }
+
+// Data decryption using ChaCha20 algorithm with a 96-bit nonce variant.
+// Since encryption and encryption is done the same way, Decrypt just
+// returns a call to Encrypt.
+//
+// https://datatracker.ietf.org/doc/html/rfc8439
+func (c *Cipher) Decrypt(cipherText []byte) ([]byte, error) {
+	return c.Encrypt(cipherText)
+}
