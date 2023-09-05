@@ -31,7 +31,8 @@ import (
 	"errors"
 	"math/bits"
 
-	"github.com/wedkarz02/chacha20/util"
+	"github.com/wedkarz02/chacha20/pkg/poly"
+	"github.com/wedkarz02/chacha20/pkg/util"
 )
 
 const (
@@ -52,6 +53,9 @@ const (
 
 	// Number of ChaCha rounds.
 	NR = 20
+
+	// Size of the Poly1305 tag.
+	TAG_SIZE = poly.TAG_SIZE
 )
 
 const (

@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Package util implements utilities used in the chacha20 package.
+// Package util implements utilities used in the chacha20.
 package util
 
 import (

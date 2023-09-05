@@ -25,7 +25,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/wedkarz02/chacha20/util"
+	"github.com/wedkarz02/chacha20/pkg/util"
 )
 
 func printState(state [16]uint32) {
