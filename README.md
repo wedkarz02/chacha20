@@ -38,23 +38,23 @@ func main() {
     message := []byte("ChaCha20 encryption is really cool and also fast!")
 
     // Cipher object initialization.
-	cipher, err := chacha20.NewCipher(key)
+    cipher, err := chacha20.NewCipher(key)
 
-	// It is strongly recommended to wipe the key from memory at the end.
-	defer cipher.ClearKey()
+    // It is strongly recommended to wipe the key from memory at the end.
+    defer cipher.ClearKey()
 
-	// Make sure to check for any errors.
-	if err != nil {
-		log.Fatalf("Cipher init error: %v\n", err)
-	}
+    // Make sure to check for any errors.
+    if err != nil {
+        log.Fatalf("Cipher init error: %v\n", err)
+    }
 
-	// Encrypting the plainText.
-	cipherText, err := cipher.Encrypt(plainText)
+    // Encrypting the plainText.
+    cipherText, err := cipher.Encrypt(plainText)
 
-	// Make sure to check for any errors.
-	if err != nil {
-		log.Fatalf("Encryption error: %v\n", err)
-	}
+    // Make sure to check for any errors.
+    if err != nil {
+        log.Fatalf("Encryption error: %v\n", err)
+    }
 
     // Printing the cipherText as bytes.
     for _, b := range cipherText {
