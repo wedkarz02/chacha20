@@ -49,7 +49,7 @@ func main() {
     }
 
     // Encrypting the plainText.
-    cipherText, err := cipher.Encrypt(plainText)
+    cipherText, err := cipher.Encrypt(message)
 
     // Make sure to check for any errors.
     if err != nil {
