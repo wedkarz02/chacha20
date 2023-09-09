@@ -77,4 +77,4 @@ $ go test -v
 ```
 
 # License
-aes256go is available under the MIT license. See the [LICENSE](https://github.com/wedkarz02/chacha20/blob/main/LICENSE) file for more info.
+chacha20 is available under the MIT license. See the [LICENSE](https://github.com/wedkarz02/chacha20/blob/main/LICENSE) file for more info.
