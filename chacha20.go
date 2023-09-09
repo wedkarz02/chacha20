@@ -253,10 +253,8 @@ func streamBytes(data []byte, keyStream []byte) ([]byte, error) {
 func (c *Cipher) encryptionCore(data []byte) ([]byte, error) {
 	var keyStream []byte
 
-	if c.ctr != INITIAL_CTR {
-		c.ctr = INITIAL_CTR
-		c.resetState()
-	}
+	c.ctr = INITIAL_CTR
+	c.resetState()
 
 	for i := 0; i < len(data)/STATE_BYTE_SIZE+1; i++ {
 		c.block()
