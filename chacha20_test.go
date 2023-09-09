@@ -201,13 +201,13 @@ func TestEncrypt(t *testing.T) {
 		panic(err)
 	}
 
+	actualCipherText = actualCipherText[NONCE_SIZE:]
+
 	for i, b := range testVectors[0].expectedCipherText {
 		if !reflect.DeepEqual(b, actualCipherText[i]) {
 			t.Fatalf("encryption failed at index %d: expected %02x, found %02x", i, testVectors[0].expectedCipherText[i], b)
 		}
 	}
-
-	fmt.Println(string(actualCipherText))
 }
 
 func TestDecrypt(t *testing.T) {
@@ -260,7 +260,9 @@ func TestDecrypt(t *testing.T) {
 	c.nonce.Bytes = [12]byte(testVectors[0].nonce)
 	c.resetState()
 
-	actualPlainText, err := c.Encrypt(testVectors[0].cipherText)
+	testVectors[0].cipherText = append(c.nonce.Bytes[:], testVectors[0].cipherText...)
+
+	actualPlainText, err := c.Decrypt(testVectors[0].cipherText)
 	if err != nil {
 		panic(err)
 	}
@@ -270,6 +272,4 @@ func TestDecrypt(t *testing.T) {
 			t.Fatalf("encryption failed at index %d: expected %02x, found %02x", i, testVectors[0].expectedPlainText[i], b)
 		}
 	}
-
-	fmt.Println(string(actualPlainText))
 }

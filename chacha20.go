@@ -79,6 +79,10 @@ var (
 	// Error returned if there isn't enough keystream
 	// to XOR with the data.
 	ErrKeyStreamSize = errors.New("key stream shorter than data")
+
+	// Error returned if the length of the cipherText is smaller
+	// than the nonce length.
+	ErrCipherTextSize = errors.New("unable to strip the nonce from the ciphertext")
 )
 
 // Cipher structure contains information about the key,
@@ -245,10 +249,8 @@ func streamBytes(data []byte, keyStream []byte) ([]byte, error) {
 	return result, nil
 }
 
-// Data encryption using ChaCha20 algorithm with a 96-bit nonce variant.
-//
-// https://datatracker.ietf.org/doc/html/rfc8439
-func (c *Cipher) Encrypt(plainText []byte) ([]byte, error) {
+// encryptionCore is used to encrypt/decrypt the data.
+func (c *Cipher) encryptionCore(data []byte) ([]byte, error) {
 	var keyStream []byte
 
 	if c.ctr != INITIAL_CTR {
@@ -256,7 +258,7 @@ func (c *Cipher) Encrypt(plainText []byte) ([]byte, error) {
 		c.resetState()
 	}
 
-	for i := 0; i < len(plainText)/STATE_BYTE_SIZE+1; i++ {
+	for i := 0; i < len(data)/STATE_BYTE_SIZE+1; i++ {
 		c.block()
 		streamBytes := c.serialize()
 		keyStream = append(keyStream, streamBytes[:]...)
@@ -264,20 +266,48 @@ func (c *Cipher) Encrypt(plainText []byte) ([]byte, error) {
 		c.resetState()
 	}
 
-	cipherText, err := streamBytes(plainText, keyStream)
+	cipherData, err := streamBytes(data, keyStream)
 
 	if err != nil {
 		return nil, err
 	}
 
+	return cipherData, nil
+}
+
+// Data encryption using ChaCha20 algorithm with a 96-bit nonce variant.
+// The nonce is prepended to the cipherText.
+//
+// https://datatracker.ietf.org/doc/html/rfc8439
+func (c *Cipher) Encrypt(plainText []byte) ([]byte, error) {
+	cipherText, err := c.encryptionCore(plainText)
+
+	if err != nil {
+		return nil, err
+	}
+
+	cipherText = append(c.nonce.Bytes[:], cipherText...)
 	return cipherText, nil
 }
 
 // Data decryption using ChaCha20 algorithm with a 96-bit nonce variant.
-// Since encryption and encryption is done the same way, Decrypt just
-// returns a call to Encrypt.
+// Cipher object nonce is overwritten by bytes stripped from the cipherText.
 //
 // https://datatracker.ietf.org/doc/html/rfc8439
 func (c *Cipher) Decrypt(cipherText []byte) ([]byte, error) {
-	return c.Encrypt(cipherText)
+	if len(cipherText) < NONCE_SIZE {
+		return nil, ErrCipherTextSize
+	}
+
+	nonce := cipherText[:NONCE_SIZE]
+	cipherText = cipherText[NONCE_SIZE:]
+
+	copy(c.nonce.Bytes[:], nonce)
+	plainText, err := c.encryptionCore(cipherText)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return plainText, nil
 }
