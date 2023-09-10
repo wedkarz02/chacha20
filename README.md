@@ -1,5 +1,8 @@
 # ChaCha20
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/wedkarz02/chacha20.svg)](https://pkg.go.dev/github.com/wedkarz02/chacha20)
+[![Go Report Card](https://goreportcard.com/badge/github.com/wedkarz02/chacha20)](https://goreportcard.com/report/github.com/wedkarz02/chacha20)
+![GitHub release (with filter)](https://img.shields.io/github/v/release/wedkarz02/chacha20)
 [![GitHub](https://img.shields.io/github/license/wedkarz02/chacha20)](https://github.com/wedkarz02/chacha20/blob/main/LICENSE)
 
 Go implementation of the ChaCha20 cipher algorithm. \
@@ -75,6 +78,10 @@ To test this package use the ``go test`` command from the root directory:
 ```bash
 $ go test -v
 ```
+
+# Documentation
+For more documentation, see [pkg.go.dev](https://pkg.go.dev/github.com/wedkarz02/chacha20).
+
 
 # License
 chacha20 is available under the MIT license. See the [LICENSE](https://github.com/wedkarz02/chacha20/blob/main/LICENSE) file for more info.
